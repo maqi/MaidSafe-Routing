@@ -190,6 +190,15 @@ void Service::Connect(protobuf::Message& message) {
     assert((!this_endpoint_pair.external.address().is_unspecified() ||
             !this_endpoint_pair.local.address().is_unspecified()) &&
            "Unspecified endpoint after GetAvailableEndpoint success.");
+    if (this_endpoint_pair.external.address().is_unspecified() &&
+        this_endpoint_pair.local.address() != peer_endpoint_pair.local.address()) {
+      // force to use static IP as external, only for LNC seeding network vaults
+      this_endpoint_pair.external = boost::asio::ip::udp::endpoint(
+          boost::asio::ip::address_v4::from_string("213.104.185.97"), this_endpoint_pair.local.port());
+      LOG(kVerbose) << "this_endpoint_pair.external forced to be replaced as "
+                    << this_endpoint_pair.external.address().to_string() << " : "
+                    << this_endpoint_pair.external.port();
+    }
 
     int add_result(AddToRudp(network_, routing_table_.kNodeId(), routing_table_.kConnectionId(),
                              peer_node.id, peer_node.connection_id, peer_endpoint_pair, false,
